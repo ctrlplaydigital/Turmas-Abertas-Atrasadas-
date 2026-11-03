@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Turmas com atraso</title>
+<style>
+  :root{--bg:#f6f7f9;--card:#fff;--text:#1c2330;--muted:#6a7385;--line:#e3e6ec;--accent:#2f5bea;--accbg:#e8eefe;--bad:#c62828;--badbg:#fdecec;--ok:#2e7d32;--okbg:#e6f4ea}
+  @media (prefers-color-scheme:dark){:root{--bg:#14171d;--card:#1d2129;--text:#e8ebf1;--muted:#97a0b2;--line:#2d333f;--accent:#6c8cff;--accbg:#262f4d;--bad:#ff8a80;--badbg:#3a1f22;--ok:#81c784;--okbg:#1f3324}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  main{max-width:980px;margin:0 auto;padding:24px 16px 48px}
+  h1{font-size:22px;margin:0 0 4px}
+  p.sub{color:var(--muted);margin:0 0 20px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+  .drop{display:block;border:2px dashed var(--line);border-radius:12px;padding:22px;text-align:center;cursor:pointer;color:var(--muted)}
+  .drop.over,.drop:hover{border-color:var(--accent);color:var(--text)}
+  .drop strong{color:var(--accent)}
+  input[type=file]{display:none}
+  .row{display:flex;gap:16px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+  .stats{display:flex;gap:10px;flex-wrap:wrap}
+  .stat{background:var(--bg);border-radius:10px;padding:8px 14px}
+  .stat b{display:block;font-size:20px}
+  .stat span{color:var(--muted);font-size:12px}
+  label{color:var(--muted);font-size:13px}
+  input[type=number]{width:64px;padding:6px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text)}
+  button{padding:8px 14px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text);cursor:pointer;font:inherit}
+  button:hover{border-color:var(--accent)}
+  button.danger:hover{border-color:var(--bad);color:var(--bad)}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+  .tab{padding:7px 14px;border-radius:999px;border:1px solid var(--line);background:var(--card);cursor:pointer;font-size:14px}
+  .tab small{color:var(--muted);margin-left:4px}
+  .tab.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .tab.on small{color:#fff;opacity:.85}
+  .tabs.years .tab{border-radius:8px}
+  .tabs.years .tab.on{background:var(--accbg);color:var(--accent);border-color:var(--accent)}
+  .tablewrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;min-width:620px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  th.s{cursor:pointer;user-select:none}
+  td.num{font-variant-numeric:tabular-nums}
+  .badge{display:inline-block;background:var(--badbg);color:var(--bad);font-weight:600;padding:2px 10px;border-radius:999px}
+  .msg{color:var(--muted);padding:8px 0;font-size:14px}
+  .err{color:var(--bad)}
+  .ok{color:var(--ok)}
+  .hidden{display:none}
+  h2{font-size:17px;margin:0 0 4px}
+  .badge.good{background:var(--okbg);color:var(--ok)}
+  button.armed{border-color:var(--bad);color:var(--bad);font-weight:600}
+  #printArea{display:none}
+  .rp{color:#111;font:13px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .rp h1{font-size:26px;margin:2px 0 4px}
+  .rp h3{font-size:14px;margin:18px 0 6px;border-bottom:2px solid #2f5bea;padding-bottom:3px}
+  .rp .kick{color:#2f5bea;font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:11px}
+  .rp .meta{color:#666;font-size:12px}
+  .rp .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}
+  .rp .box{border:1px solid #d8dce5;border-radius:8px;padding:8px 10px;background:#f6f7f9}
+  .rp .box b{display:block;font-size:22px}
+  .rp .box span{color:#666;font-size:11px}
+  .rp .box.bad b{color:#c62828}
+  .rp .box.good{background:#eaf6ec;border-color:#b9dfbf}
+  .rp .box.good b{color:#2e7d32}
+  .rp .okc{color:#2e7d32;font-weight:600}
+  .rp table{width:100%;border-collapse:collapse;min-width:0}
+  .rp th,.rp td{padding:6px 8px;border-bottom:1px solid #e3e6ec;text-align:left;white-space:normal;color:#111}
+  .rp th{font-size:10px;color:#666}
+  .rp .bar{background:#e3e6ec;border-radius:4px;height:9px;width:100%}
+  .rp .bar i{display:block;height:9px;border-radius:4px;background:#c62828}
+  .rp .foot{margin-top:18px;color:#888;font-size:10px}
+  @media print{
+    @page{size:A4;margin:14mm}
+    body{background:#fff}
+    main{display:none!important}
+    #printArea{display:block}
+    .rp{page-break-after:always}
+    .rp:last-child{page-break-after:auto}
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Turmas que abriram atrasadas</h1>
+  <p class="sub">Importe os CSVs mês a mês. Cada mês vira uma aba e há uma aba Total com o resumo por professor.</p>
+
+  <label class="drop" id="drop">
+    <input type="file" id="file" accept=".csv,text/csv" multiple>
+    <div><strong>Clique para escolher</strong> ou arraste um ou mais arquivos CSV aqui</div>
+    <div id="status" class="msg"></div>
+  </label>
+  <div id="error" class="msg err"></div>
+
+  <div id="app" class="hidden">
+    <div id="yearTabs" class="tabs years"></div>
+    <div id="tabs" class="tabs"></div>
+
+    <div class="card row">
+      <div class="stats">
+        <div class="stat"><b id="sTotal">0</b><span>turmas com #código</span></div>
+        <div class="stat"><b id="sLate" style="color:var(--bad)">0</b><span>abriram atrasadas</span></div>
+        <div class="stat"><b id="sMax">0</b><span>maior atraso (min)</span></div>
+      </div>
+      <div class="row" style="gap:10px">
+        <label>Atraso mínimo (min) <input type="number" id="tol" value="1" min="1"></label>
+        <button id="pdfBtn">Exportar PDF</button>
+        <button id="csvBtn">Baixar CSV</button>
+      </div>
+    </div>
+
+    <div class="card hidden" id="profView">
+      <div class="row" style="margin-bottom:4px"><h2>Professores</h2><button id="pdfAllBtn">PDF de todos os professores (1 página cada)</button></div>
+      <p class="sub" style="margin:0 0 12px;font-size:13px">Clique em um professor para ver todas as informações dele no período selecionado.</p>
+      <div id="profList" class="tabs"></div>
+      <div id="profDetail"></div>
+    </div>
+
+    <div class="card" id="profCard">
+      <h2 id="profTitle">Resumo por professor</h2>
+      <p class="sub" style="margin:0 0 12px;font-size:13px">Lista todos os professores com turmas no período. “Turmas no período” conta todas as reuniões com #código, atrasadas ou não; média, mediana e máximo consideram só as atrasadas (zero para quem nunca atrasou).</p>
+      <div class="tablewrap">
+        <table style="min-width:560px">
+          <thead><tr>
+            <th>Professor</th><th>Atrasos</th><th>Turmas no período</th><th>Média de atraso</th><th>Mediana</th><th>Máximo de atraso</th>
+          </tr></thead>
+          <tbody id="profBody"></tbody>
+        </table>
+      </div>
+      <div id="profEmpty" class="msg hidden">Nenhuma turma nesse período.</div>
+    </div>
+
+    <div class="card" id="turmasCard">
+      <div class="tablewrap">
+        <table>
+          <thead><tr>
+            <th class="s" data-k="codigo">Código</th>
+            <th class="s" data-k="turma">Turma</th>
+            <th class="s" data-k="prof">Professor</th>
+            <th class="s" data-k="prevTxt">Horário previsto</th>
+            <th class="s" data-k="realTxt">Horário iniciado</th>
+            <th class="s" data-k="atraso">Atraso ▼</th>
+          </tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div id="empty" class="msg hidden">Nenhuma turma atrasada com esse critério. 🎉</div>
+    </div>
+
+    <div class="row" style="justify-content:flex-end;gap:10px">
+      <button id="delMonth" class="danger">Remover este mês</button>
+      <button id="clearAll" class="danger">Limpar tudo</button>
+    </div>
+  </div>
+</main>
+<div id="printArea"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const MON = {jan:0,feb:1,fev:1,mar:2,apr:3,abr:3,may:4,mai:4,jun:5,jul:6,aug:7,ago:7,sep:8,set:8,oct:9,out:9,nov:10,dec:11,dez:11};
+const STORE = 'turmas-atrasos-v2';
+
+let all = [];                 // todas as turmas (com #código) já importadas
+let view = {year:null, tab:'total', prof:null};
+let sortKey = 'atraso', sortDir = -1;
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const norm = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+const fmt = m => String(Math.floor(m/60)).padStart(2,'0') + ':' + String(m%60).padStart(2,'0');
+
+// ---------- armazenamento local (fica no navegador) ----------
+function save(){ try{ localStorage.setItem(STORE, JSON.stringify(all)); }catch(e){} }
+function restore(){ try{ const s = localStorage.getItem(STORE); if (s) all = JSON.parse(s) || []; }catch(e){ all = []; } }
+
+// ---------- CSV ----------
+function parseCSV(text){
+  text = text.replace(/^\uFEFF/, '');
+  const out = []; let row = [], f = '', q = false;
+  for (let i = 0; i < text.length; i++){
+    const c = text[i];
+    if (q){
+      if (c === '"'){ if (text[i+1] === '"'){ f += '"'; i++; } else q = false; }
+      else f += c;
+    } else if (c === '"') q = true;
+    else if (c === ',') { row.push(f); f = ''; }
+    else if (c === '\n' || c === '\r'){
+      if (c === '\r' && text[i+1] === '\n') i++;
+      row.push(f); f = ''; out.push(row); row = [];
+    } else f += c;
+  }
+  if (f !== '' || row.length){ row.push(f); out.push(row); }
+  return out.filter(r => r.some(x => x.trim() !== ''));
+}
+
+function parseDate(s){
+  let m = s.match(/(\d{1,2})\s+([A-Za-zçÇ]{3})\w*\s+(\d{4})/);
+  if (m && MON[m[2].toLowerCase()] !== undefined) return {m:MON[m[2].toLowerCase()], y:+m[3], d:+m[1]};
+  m = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m) return {m:+m[2]-1, y:+m[3], d:+m[1]};
+  m = s.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return {m:+m[2]-1, y:+m[1], d:+m[3]};
+  return null;
+}
+
+function processCSV(text){
+  const data = parseCSV(text);
+  if (data.length < 2) throw new Error('arquivo vazio');
+  const head = data[0].map(norm);
+  const iTop = head.findIndex(h => h === 'topico');
+  const iIni = head.findIndex(h => h.startsWith('horario de inicio'));
+  const iId  = head.findIndex(h => h.startsWith('id da reuniao'));
+  if (iTop < 0) throw new Error('não achei a coluna “Tópico”');
+  if (iIni < 0) throw new Error('não achei a coluna “Horário de início”');
+
+  const out = [];
+  for (const r of data.slice(1)){
+    const topico = (r[iTop] || '').trim();
+    const mCode = topico.match(/#(\d+)/);
+    if (!mCode) continue;
+    const parts = topico.split('/');
+    if (parts.length < 3) continue;
+    const prevM = parts[parts.length - 2].trim().match(/^(\d{1,2}):(\d{2})/);
+    if (!prevM) continue;
+    const prof = parts[parts.length - 1].replace(/\s*-\s*Sala.*$/i, '').trim();
+    const turmaFull = parts.slice(0, parts.length - 2).join('/');
+    const turma = turmaFull.slice(turmaFull.indexOf(mCode[0]) + mCode[0].length).replace(/^[\s-]+|[\s-]+$/g,'');
+    const iniRaw = r[iIni] || '';
+    const realM = iniRaw.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?\s*$/);
+    const dt = parseDate(iniRaw);
+    if (!realM || !dt) continue;
+
+    const prev = +prevM[1]*60 + +prevM[2];
+    const realSec = (+realM[1]*60 + +realM[2])*60 + (+realM[3] || 0);
+    let diff = realSec/60 - prev;
+    if (diff < -720) diff += 1440; else if (diff > 720) diff -= 1440;
+
+    const hh = Math.floor(realSec/3600), mm = Math.floor(realSec/60) % 60, ss = realSec % 60;
+    out.push({
+      key: (iId >= 0 ? (r[iId]||'').trim() : '') + '|' + iniRaw.trim() + '|' + mCode[0],
+      codigo: mCode[0], turma, prof,
+      prevTxt: fmt(prev),
+      realTxt: String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0')+':'+String(ss).padStart(2,'0'),
+      atraso: diff, y: dt.y, m: dt.m, d: dt.d
+    });
+  }
+  return out;
+}
+
+// ---------- importação ----------
+async function importFiles(files){
+  $('error').textContent = ''; $('status').textContent = '';
+  const known = new Set(all.map(r => r.key));
+  let added = 0, dup = 0; const msgs = [], errs = [];
+  for (const f of files){
+    try{
+      const rows = processCSV(await f.text());
+      let a = 0;
+      for (const r of rows){ if (known.has(r.key)) { dup++; continue; } known.add(r.key); all.push(r); a++; }
+      added += a; msgs.push(f.name + ': ' + a + ' turmas');
+    }catch(e){ errs.push(f.name + ' — ' + e.message); }
+  }
+  save();
+  if (added || dup) $('status').innerHTML = '<span class="ok">Importado: ' + added + ' turmas novas' + (dup ? ' (' + dup + ' já estavam na lista e foram ignoradas)' : '') + '.</span>';
+  if (errs.length) $('error').textContent = 'Não consegui ler: ' + errs.join('; ');
+  // abre o ano/mês mais recente importado
+  if (added){ const last = all[all.length-1]; view = {year:last.y, tab:last.m}; }
+  render();
+}
+
+// ---------- cálculos ----------
+const scope = () => all.filter(r => (view.year === 'all' || r.y === view.year) && (typeof view.tab !== 'number' || r.m === view.tab));
+const tol = () => Math.max(1, +$('tol').value || 1);
+
+const median = v => { const a = [...v].sort((x,y)=>x-y), n = a.length; return n ? (n%2 ? a[(n-1)/2] : (a[n/2-1]+a[n/2])/2) : 0; };
+const f1 = x => x.toFixed(1).replace('.', ',');
+
+function profSummary(rows){
+  const tol_ = tol(), total = {}, by = {};
+  rows.forEach(r => total[r.prof] = (total[r.prof]||0) + 1);
+  rows.filter(r => Math.floor(r.atraso) >= tol_).forEach(r => (by[r.prof] = by[r.prof] || []).push(Math.floor(r.atraso)));
+  return Object.keys(total).map(nome => { const v = by[nome] || []; return {
+    nome, n: v.length, total: total[nome],
+    media: v.length ? v.reduce((a,b) => a+b, 0) / v.length : 0, mediana: median(v), max: v.length ? Math.max(...v) : 0
+  }; }).sort((a,b) => b.n - a.n || b.media - a.media || a.nome.localeCompare(b.nome,'pt-BR'));
+}
+
+// ---------- tela ----------
+function render(){
+  if (!all.length){ $('app').classList.add('hidden'); return; }
+  $('app').classList.remove('hidden');
+
+  const years = [...new Set(all.map(r => r.y))].sort();
+  if (view.year !== 'all' && !years.includes(view.year)) view.year = years[years.length-1];
+  if (view.year === 'all' && view.tab !== 'prof') view.tab = 'total';
+  const inYear = all.filter(r => view.year === 'all' || r.y === view.year);
+  const months = [...new Set(inYear.map(r => r.m))].sort((a,b) => a-b);
+  if (typeof view.tab === 'number' && !months.includes(view.tab)) view.tab = 'total';
+
+  // abas de ano (só se houver mais de um)
+  $('yearTabs').classList.toggle('hidden', years.length < 2);
+  $('yearTabs').innerHTML = years.map(y => `<button class="tab ${view.year===y?'on':''}" data-y="${y}">${y}</button>`).join('')
+    + `<button class="tab ${view.year==='all'?'on':''}" data-y="all">Todos os anos</button>`;
+
+  // abas de mês + total
+  const t = tol();
+  const lateCount = list => list.filter(r => Math.floor(r.atraso) >= t).length;
+  let html = '';
+  if (view.year !== 'all'){
+    html += months.map(m => `<button class="tab ${view.tab===m?'on':''}" data-m="${m}">${MESES[m]}<small>${lateCount(inYear.filter(r => r.m===m))}</small></button>`).join('');
+  }
+  html += `<button class="tab ${view.tab==='total'?'on':''}" data-m="total">${view.year==='all'?'Total geral':'Total '+view.year}<small>${lateCount(inYear)}</small></button>`;
+  html += `<button class="tab ${view.tab==='prof'?'on':''}" data-m="prof">Professores</button>`;
+  $('tabs').innerHTML = html;
+
+  const rows = scope();
+  const late = rows.filter(r => Math.floor(r.atraso) >= t);
+  late.sort((a,b) => {
+    const x = a[sortKey], y = b[sortKey];
+    return (typeof x === 'number' ? x - y : String(x).localeCompare(String(y),'pt-BR')) * sortDir;
+  });
+  render.late = late;
+
+  $('sTotal').textContent = rows.length;
+  $('sLate').textContent = late.length;
+  $('sMax').textContent = late.length ? Math.floor(Math.max(...late.map(r => r.atraso))) : 0;
+
+  const isTotal = view.tab === 'total', isProf = view.tab === 'prof', isMonth = typeof view.tab === 'number';
+  $('turmasCard').classList.toggle('hidden', !isMonth);
+  $('delMonth').classList.toggle('hidden', !isMonth);
+  $('profCard').classList.toggle('hidden', isProf);
+  $('profView').classList.toggle('hidden', !isProf);
+  $('empty').classList.toggle('hidden', late.length > 0);
+  $('tbody').innerHTML = late.map(r => `
+    <tr>
+      <td class="num"><b>${esc(r.codigo)}</b></td><td>${esc(r.turma)}</td><td>${esc(r.prof)}</td>
+      <td class="num">${r.prevTxt}</td><td class="num">${r.realTxt}</td>
+      <td><span class="badge">${Math.floor(r.atraso)} min</span></td>
+    </tr>`).join('');
+
+  const prof = profSummary(rows);
+  render.prof = prof;
+  $('profTitle').textContent = 'Resumo por professor — ' + (!isMonth ? (view.year==='all' ? 'todos os meses' : 'total de ' + view.year) : MESES[view.tab] + ' de ' + view.year);
+  $('profEmpty').classList.toggle('hidden', prof.length > 0);
+  $('profBody').innerHTML = prof.map(p => `
+    <tr>
+      <td><a href="#" data-prof="${esc(p.nome)}" style="color:var(--accent);text-decoration:none">${esc(p.nome)}</a></td><td class="num"><b>${p.n}</b></td><td class="num">${p.total}</td>
+      <td class="num">${f1(p.media)} min</td><td class="num">${f1(p.mediana)} min</td>
+      <td class="num"><span class="badge ${p.max ? '' : 'good'}">${p.max} min</span></td>
+    </tr>`).join('');
+
+  if (isProf) renderProf(rows, t);
+}
+
+function renderProf(rows, t){
+  const names = [...new Set(rows.map(r => r.prof))].sort((a,b) => a.localeCompare(b,'pt-BR'));
+  if (!names.includes(view.prof)){
+    const s = render.prof || [];
+    view.prof = s.length ? s[0].nome : names[0];
+  }
+  const cnt = n => rows.filter(r => r.prof === n && Math.floor(r.atraso) >= t).length;
+  $('profList').innerHTML = names.map(n => `<button class="tab ${n===view.prof?'on':''}" data-p="${esc(n)}">${esc(n)}<small>${cnt(n)}</small></button>`).join('');
+
+  const mine = rows.filter(r => r.prof === view.prof);
+  const late = mine.filter(r => Math.floor(r.atraso) >= t).sort((a,b) => b.atraso - a.atraso);
+  render.profLate = late;
+  const v = late.map(r => Math.floor(r.atraso));
+  const soma = v.reduce((a,b) => a+b, 0);
+  const z = late.length ? null : 'var(--ok)';
+  const st = (b, l, c) => `<div class="stat"><b${c?` style="color:${c}"`:''}>${b}</b><span>${l}</span></div>`;
+  const pct = mine.length ? (late.length / mine.length * 100) : 0;
+
+  const groups = {};
+  mine.forEach(r => { const k = r.y*100 + r.m; (groups[k] = groups[k] || []).push(r); });
+  const mesRows = Object.keys(groups).sort().map(k => {
+    const g = groups[k], l = g.filter(r => Math.floor(r.atraso) >= t).map(r => Math.floor(r.atraso));
+    return `<tr><td>${MESES[g[0].m]} ${g[0].y}</td><td class="num">${g.length}</td><td class="num">${l.length}</td>
+      <td class="num">${l.length ? f1(l.reduce((a,b)=>a+b,0)/l.length)+' min' : '0,0 min'}</td>
+      <td class="num">${l.length ? Math.max(...l)+' min' : '0 min'}</td></tr>`;
+  }).join('');
+
+  $('profDetail').innerHTML = `
+    <h2 style="margin:6px 0 10px">${esc(view.prof)}</h2>
+    <div class="stats" style="margin-bottom:16px">
+      ${st(mine.length,'turmas no período')}
+      ${st(late.length,'atrasos', late.length ? 'var(--bad)' : 'var(--ok)')}
+      ${st(f1(pct)+'%','das turmas atrasadas')}
+      ${st(late.length ? f1(soma/late.length) : '0,0','média de atraso (min)', z)}
+      ${st(late.length ? f1(median(v)) : '0,0','mediana do atraso (min)', z)}
+      ${st(late.length ? Math.max(...v) : 0,'máximo de atraso (min)', z)}
+      ${st(late.length ? Math.min(...v) : 0,'menor atraso (min)', z)}
+      ${st(soma,'total de minutos atrasados')}
+      ${st(mine.length - late.length,'turmas no horário')}
+    </div>
+    <h3 style="font-size:15px;margin:0 0 6px">Por mês</h3>
+    <div class="tablewrap" style="margin-bottom:16px"><table style="min-width:480px">
+      <thead><tr><th>Mês</th><th>Turmas</th><th>Atrasos</th><th>Média</th><th>Máximo</th></tr></thead>
+      <tbody>${mesRows}</tbody></table></div>
+    <h3 style="font-size:15px;margin:0 0 6px">Turmas atrasadas</h3>
+    ${late.length ? `<div class="tablewrap"><table><thead><tr><th>Código</th><th>Turma</th><th>Data</th><th>Horário previsto</th><th>Horário iniciado</th><th>Atraso</th></tr></thead><tbody>
+      ${late.map(r => `<tr><td class="num"><b>${esc(r.codigo)}</b></td><td>${esc(r.turma)}</td><td class="num">${r.d ? String(r.d).padStart(2,'0')+'/' : ''}${String(r.m+1).padStart(2,'0')}/${r.y}</td><td class="num">${r.prevTxt}</td><td class="num">${r.realTxt}</td><td><span class="badge">${Math.floor(r.atraso)} min</span></td></tr>`).join('')}
+      </tbody></table></div>` : '<div class="msg ok">Nenhum atraso nesse período. 🎉</div>'}`;
+}
+
+// ---------- eventos ----------
+$('file').addEventListener('change', e => { importFiles([...e.target.files]); e.target.value = ''; });
+const drop = $('drop');
+['dragenter','dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', e => importFiles([...e.dataTransfer.files]));
+$('tol').addEventListener('input', render);
+$('profList').addEventListener('click', e => { const b = e.target.closest('[data-p]'); if (!b) return; view.prof = b.dataset.p; render(); });
+$('profBody').addEventListener('click', e => { const a = e.target.closest('[data-prof]'); if (!a) return; e.preventDefault(); view.prof = a.dataset.prof; view.tab = 'prof'; render(); window.scrollTo(0,0); });
+
+$('yearTabs').addEventListener('click', e => {
+  const b = e.target.closest('[data-y]'); if (!b) return;
+  view.year = b.dataset.y === 'all' ? 'all' : +b.dataset.y; if (view.tab !== 'prof') view.tab = 'total'; render();
+});
+$('tabs').addEventListener('click', e => {
+  const b = e.target.closest('[data-m]'); if (!b) return;
+  view.tab = (b.dataset.m === 'total' || b.dataset.m === 'prof') ? b.dataset.m : +b.dataset.m; render();
+});
+document.querySelectorAll('th.s').forEach(th => th.addEventListener('click', () => {
+  const k = th.dataset.k;
+  sortDir = (sortKey === k) ? -sortDir : (k === 'atraso' ? -1 : 1);
+  sortKey = k;
+  document.querySelectorAll('th.s').forEach(x => x.textContent = x.textContent.replace(/ [▲▼]$/, ''));
+  th.textContent += sortDir === 1 ? ' ▲' : ' ▼';
+  render();
+}));
+
+// confirmação em dois cliques (o confirm() do navegador é bloqueado em alguns ambientes)
+function twoStep(btn, action){
+  btn.addEventListener('click', () => {
+    if (btn.dataset.armed){ clearTimeout(btn._t); disarm(btn); action(); return; }
+    btn.dataset.armed = '1'; btn.dataset.label = btn.textContent;
+    btn.textContent = 'Clique de novo para confirmar'; btn.classList.add('armed');
+    btn._t = setTimeout(() => disarm(btn), 4000);
+  });
+}
+function disarm(btn){ if (!btn.dataset.armed) return; btn.textContent = btn.dataset.label; btn.classList.remove('armed'); delete btn.dataset.armed; }
+
+twoStep($('delMonth'), () => {
+  all = all.filter(r => !(r.y === view.year && r.m === view.tab));
+  save(); view.tab = 'total'; render();
+});
+twoStep($('clearAll'), () => {
+  all = []; view = {year:null, tab:'total', prof:null};
+  try{ localStorage.removeItem(STORE); }catch(e){}
+  $('status').textContent = ''; $('error').textContent = '';
+  render();
+});
+
+// ---------- relatórios em PDF (usa "Salvar como PDF" do navegador) ----------
+const periodLabel = () => view.year === 'all' ? 'Todos os anos' : (typeof view.tab === 'number' ? MESES[view.tab] + ' de ' + view.year : 'Ano de ' + view.year);
+const box = (b, l, cls) => `<div class="box${cls ? ' ' + cls : ''}"><b>${b}</b><span>${l}</span></div>`;
+const hoje = () => new Date().toLocaleDateString('pt-BR');
+const head = (title, label, t) => `<div class="kick">Relatório de pontualidade das turmas</div><h1>${esc(title)}</h1>
+  <div class="meta">Período: ${esc(label)} · atraso mínimo considerado: ${t} min · gerado em ${hoje()}</div>`;
+const dstr = r => (r.d ? String(r.d).padStart(2,'0') + '/' : '') + String(r.m+1).padStart(2,'0') + '/' + r.y;
+
+function profPage(name, rows, t, label){
+  const mine = rows.filter(r => r.prof === name);
+  const late = mine.filter(r => Math.floor(r.atraso) >= t).sort((a,b) => b.atraso - a.atraso);
+  const v = late.map(r => Math.floor(r.atraso)), soma = v.reduce((a,b) => a+b, 0);
+  const pct = mine.length ? late.length / mine.length * 100 : 0;
+  const groups = {};
+  mine.forEach(r => { const k = r.y*100 + r.m; (groups[k] = groups[k] || []).push(r); });
+  const meses = Object.keys(groups).sort().map(k => {
+    const g = groups[k], l = g.filter(r => Math.floor(r.atraso) >= t).map(r => Math.floor(r.atraso));
+    const pc = l.length / g.length * 100;
+    return `<tr><td>${MESES[g[0].m]} ${g[0].y}</td><td>${g.length}</td><td>${l.length}</td><td>${f1(pc)}%</td>
+      <td>${l.length ? f1(l.reduce((a,b)=>a+b,0)/l.length)+' min' : '0,0 min'}</td><td>${l.length ? Math.max(...l)+' min' : '0 min'}</td>
+      <td style="width:22%"><div class="bar"><i style="width:${pc}%"></i></div></td></tr>`;
+  }).join('');
+  const top = late.slice(0,3).map(r => `<tr><td>${esc(r.codigo)}</td><td>${esc(r.turma)}</td><td>${dstr(r)}</td><td>${r.prevTxt}</td><td>${r.realTxt}</td><td><b>${Math.floor(r.atraso)} min</b></td></tr>`).join('');
+  return `<div class="rp">${head(name, label, t)}
+    <div class="grid">
+      ${box(mine.length,'turmas no período')}${box(late.length,'atrasos', late.length ? 'bad' : 'good')}${box(f1(pct)+'%','das turmas atrasadas')}${box(mine.length-late.length,'turmas no horário')}
+      ${box(late.length ? f1(soma/late.length) : '0,0','média de atraso (min)', late.length ? '' : 'good')}${box(late.length ? f1(median(v)) : '0,0','mediana do atraso (min)', late.length ? '' : 'good')}
+      ${box(late.length ? Math.max(...v) : 0,'máximo de atraso (min)', late.length ? '' : 'good')}${box(soma,'total de minutos atrasados', late.length ? '' : 'good')}
+    </div>
+    <h3>Evolução por mês</h3>
+    <table><thead><tr><th>Mês</th><th>Turmas</th><th>Atrasos</th><th>% atrasadas</th><th>Média</th><th>Máximo</th><th></th></tr></thead><tbody>${meses}</tbody></table>
+    ${late.length ? `<h3>Maiores atrasos</h3><table><thead><tr><th>Código</th><th>Turma</th><th>Data</th><th>Previsto</th><th>Iniciado</th><th>Atraso</th></tr></thead><tbody>${top}</tbody></table>` : '<h3 class="okc" style="color:#2e7d32">Nenhum atraso no período 🎉 — professor pontual</h3>'}
+    <div class="foot">Atraso = diferença entre o horário previsto no tópico da reunião e o horário em que a sala foi aberta.</div></div>`;
+}
+
+function summaryPage(title, rows, t, label){
+  const late = rows.filter(r => Math.floor(r.atraso) >= t);
+  const prof = profSummary(rows);
+  const trs = prof.map(p => `<tr><td>${esc(p.nome)}</td><td${p.n ? '' : ' class="okc"'}><b>${p.n}</b></td><td>${p.total}</td><td>${f1(p.n/p.total*100)}%</td><td${p.n ? '' : ' class="okc"'}>${f1(p.media)} min</td><td${p.n ? '' : ' class="okc"'}>${f1(p.mediana)} min</td><td${p.n ? '' : ' class="okc"'}>${p.max} min</td></tr>`).join('');
+  return `<div class="rp">${head(title, label, t)}
+    <div class="grid">
+      ${box(rows.length,'turmas com #código')}${box(late.length,'abriram atrasadas','bad')}
+      ${box(late.length ? Math.floor(Math.max(...late.map(r => r.atraso))) : 0,'maior atraso (min)')}${box(prof.filter(p => !p.n).length + ' de ' + prof.length,'professores sem nenhum atraso','good')}
+    </div>
+    <h3>Resumo por professor</h3>
+    ${prof.length ? `<table><thead><tr><th>Professor</th><th>Atrasos</th><th>Turmas</th><th>% atrasadas</th><th>Média</th><th>Mediana</th><th>Máximo</th></tr></thead><tbody>${trs}</tbody></table>` : '<p>Nenhum atraso nesse período.</p>'}
+    <div class="foot">Atraso = diferença entre o horário previsto no tópico da reunião e o horário em que a sala foi aberta.</div></div>`;
+}
+
+function printReport(html, fileTitle){
+  $('printArea').innerHTML = html;
+  const old = document.title; document.title = fileTitle;
+  const done = () => { document.title = old; $('printArea').innerHTML = ''; window.removeEventListener('afterprint', done); };
+  window.addEventListener('afterprint', done);
+  setTimeout(() => window.print(), 60);
+}
+
+$('pdfBtn').addEventListener('click', () => {
+  const t = tol(), rows = scope(), label = periodLabel();
+  if (view.tab === 'prof'){
+    if (!view.prof) return;
+    printReport(profPage(view.prof, rows, t, label), 'Pontualidade - ' + view.prof);
+  } else if (typeof view.tab === 'number'){
+    printReport(summaryPage('Resumo de ' + label, rows, t, label), 'Pontualidade - ' + label);
+  } else {
+    printReport(summaryPage('Resumo geral — ' + label, rows, t, label), 'Pontualidade - ' + label);
+  }
+});
+$('pdfAllBtn').addEventListener('click', () => {
+  const t = tol(), rows = scope(), label = periodLabel();
+  const names = [...new Set(rows.map(r => r.prof))].sort((a,b) => a.localeCompare(b,'pt-BR'));
+  printReport(names.map(n => profPage(n, rows, t, label)).join(''), 'Pontualidade - professores - ' + label);
+});
+
+$('csvBtn').addEventListener('click', () => {
+  const isTotal = view.tab === 'total', isProf = view.tab === 'prof';
+  const lines = isTotal
+    ? [['Professor','Atrasos','Turmas no período','Média de atraso (min)','Mediana (min)','Máximo (min)']].concat((render.prof||[]).map(p => [p.nome, p.n, p.total, f1(p.media), f1(p.mediana), p.max]))
+    : isProf
+    ? [['Código','Turma','Professor','Horário previsto','Horário iniciado','Atraso (min)']].concat((render.profLate||[]).map(r => [r.codigo, r.turma, r.prof, r.prevTxt, r.realTxt, Math.floor(r.atraso)]))
+    : [['Código','Turma','Professor','Horário previsto','Horário iniciado','Atraso (min)']].concat((render.late||[]).map(r => [r.codigo, r.turma, r.prof, r.prevTxt, r.realTxt, Math.floor(r.atraso)]));
+  const csv = '\uFEFF' + lines.map(r => r.map(c => '"' + String(c).replace(/"/g,'""') + '"').join(';')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
+  a.download = isTotal ? 'resumo_professores.csv' : isProf ? 'atrasos_' + (view.prof||'professor').replace(/\s+/g,'_') + '.csv' : 'turmas_atrasadas.csv';
+  a.click();
+});
+
+restore();
+if (all.length){ const l = all[all.length-1]; view = {year:l.y, tab:'total'}; }
+render();
+</script>
+</body>
+</html>
